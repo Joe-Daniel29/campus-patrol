@@ -1,0 +1,13 @@
+{{- if .Values.monitoring.dashboard.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "patrol.fullname" . }}-dashboard
+  labels:
+    {{- include "patrol.labels" . | nindent 4 }}
+    # The Grafana sidecar loads any ConfigMap carrying this label.
+    grafana_dashboard: "1"
+data:
+  campus-patrol.json: |-
+    {{- .Files.Get "files/dashboard.json" | nindent 4 }}
+{{- end }}
