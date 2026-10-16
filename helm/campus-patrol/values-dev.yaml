@@ -1,0 +1,10 @@
+# Local cluster (kind, minikube, Docker Desktop). No metrics-server assumed.
+backend:
+  replicaCount: 1
+frontend:
+  replicaCount: 1
+ingress:
+  enabled: true
+  host: patrol.local
+hpa:
+  enabled: false

@@ -8,7 +8,10 @@ metadata:
 spec:
   ingressClassName: {{ .Values.ingress.className }}
   rules:
-    - host: {{ .Values.ingress.host | quote }}
+    # With no host set, the rule matches any hostname (e.g. the load balancer's DNS name).
+    - {{- with .Values.ingress.host }}
+      host: {{ . | quote }}
+      {{- end }}
       http:
         paths:
           - path: /api

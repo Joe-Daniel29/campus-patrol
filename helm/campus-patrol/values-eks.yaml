@@ -1,0 +1,14 @@
+# EKS with ingress-nginx, metrics-server and kube-prometheus-stack installed
+# (see scripts/install-cluster-addons.sh).
+ingress:
+  enabled: true
+  host: ""   # match the load balancer hostname directly
+hpa:
+  enabled: true
+monitoring:
+  serviceMonitor:
+    enabled: true
+  alerts:
+    enabled: true
+  dashboard:
+    enabled: true
