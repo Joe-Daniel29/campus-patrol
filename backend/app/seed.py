@@ -6,7 +6,7 @@ Run directly with `python -m app.seed`, or set SEED_DEMO_DATA=true.
 import random
 from datetime import timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from .db import SessionLocal
@@ -32,6 +32,9 @@ EVENT_TYPES = [
 
 
 def seed_demo_data(db: Session, seed: int = 42) -> None:
+    if db.get_bind().dialect.name == "postgresql":
+        # Serialise concurrent replicas; the lock is released when this transaction ends.
+        db.execute(text("SELECT pg_advisory_xact_lock(727275)"))
     if db.scalar(select(func.count(Zone.id))):
         return  # already seeded
 
