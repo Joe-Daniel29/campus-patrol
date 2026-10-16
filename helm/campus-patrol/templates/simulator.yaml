@@ -1,0 +1,46 @@
+{{- if .Values.simulator.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "patrol.fullname" . }}-simulator
+  labels:
+    {{- include "patrol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: simulator
+spec:
+  replicas: {{ .Values.simulator.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "patrol.selector" (dict "ctx" . "component" "simulator") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "patrol.labels" . | nindent 8 }}
+        app.kubernetes.io/component: simulator
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: simulator
+          image: "{{ .Values.simulator.image }}:{{ .Values.simulator.tag }}"
+          env:
+            - name: API_URL
+              value: "http://{{ include "patrol.fullname" . }}-backend:8000"
+            - name: ROVERS
+              value: {{ .Values.simulator.rovers | quote }}
+            - name: INTERVAL
+              value: {{ .Values.simulator.interval | quote }}
+            - name: EVENT_RATE
+              value: {{ .Values.simulator.eventRate | quote }}
+            {{- if .Values.backend.ingestToken }}
+            - name: INGEST_TOKEN
+              valueFrom:
+                secretKeyRef: { name: {{ include "patrol.appSecret" . }}, key: ingest-token }
+            {{- end }}
+          resources:
+            {{- toYaml .Values.simulator.resources | nindent 12 }}
+{{- end }}
