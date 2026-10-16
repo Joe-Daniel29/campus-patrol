@@ -1,0 +1,31 @@
+# Scenario 2: pods are healthy but the Service has no endpoints, so nothing is routed.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patrol-broken-service
+  namespace: campus-patrol
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: patrol-web }
+  template:
+    metadata:
+      labels: { app: patrol-web }
+    spec:
+      containers:
+        - name: web
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: patrol-broken-service
+  namespace: campus-patrol
+spec:
+  selector:
+    app: patrol-website   # does not match the pod label "patrol-web"
+  ports:
+    - port: 80
+      targetPort: 8080
