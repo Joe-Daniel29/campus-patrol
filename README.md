@@ -65,9 +65,56 @@ ROVERS=200 INTERVAL=0.2 API_URL=http://localhost:8000 python simulator/simulator
 
 `SIM_SEED` makes runs reproducible.
 
+## Deploy to Kubernetes
+
+```bash
+# 1. Infrastructure (see terraform/README.md; costs money while it exists)
+cd terraform && terraform init && terraform apply
+$(terraform output -raw configure_kubectl) && cd ..
+
+# 2. Cluster add-ons: ingress-nginx, metrics-server, Prometheus + Grafana
+scripts/install-cluster-addons.sh
+
+# 3. The application. Images are tagged with the commit SHA by CI.
+helm upgrade --install campus-patrol ./helm/campus-patrol \
+  -n campus-patrol --create-namespace \
+  -f helm/campus-patrol/values-eks.yaml \
+  --set backend.image=ghcr.io/<owner>/campus-patrol-backend  --set backend.tag=<sha> \
+  --set frontend.image=ghcr.io/<owner>/campus-patrol-frontend --set frontend.tag=<sha> \
+  --set simulator.enabled=true --set simulator.image=ghcr.io/<owner>/campus-patrol-simulator --set simulator.tag=<sha>
+
+kubectl get pods,svc,hpa,ingress -n campus-patrol
+helm list -n campus-patrol
+```
+
+For a local cluster (kind, minikube) use `-f helm/campus-patrol/values-dev.yaml` and add `patrol.local` to `/etc/hosts`.
+
+Set the repository variable `DEPLOY_ENABLED=true` (plus the AWS secrets) and CI deploys every push to `main`.
+
+### Autoscaling demo
+
+```bash
+scripts/load-test.sh start     # 200 simulated rovers reporting every 0.2s
+kubectl get hpa -n campus-patrol -w
+scripts/load-test.sh stop
+```
+
+### Monitoring
+
+Prometheus scrapes `/metrics` through a ServiceMonitor, and a Grafana dashboard ("Campus Patrol") loads automatically from a ConfigMap. Alert rules cover offline rovers, a high 5xx ratio and an incident backlog.
+
+```bash
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-grafana 3001:80
+kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090
+```
+
 ## Metrics
 
 Beyond the default HTTP metrics: `patrol_rovers_total`, `patrol_rovers_online`, `patrol_incidents_open`, `patrol_rover_battery_percent{rover}`, `patrol_events_total{type,severity}`, `patrol_telemetry_total`.
+
+## Troubleshooting lab
+
+Three deliberately broken manifests (bad image, Service selector mismatch, failing readiness probe) are in [`troubleshooting/`](troubleshooting/README.md).
 
 ## Privacy
 
@@ -76,8 +123,9 @@ The system stores event metadata only (type, zone, confidence, time), not images
 ## Roadmap
 
 - [x] Application, tests, Docker, Compose
-- [x] GitHub Actions: test, build, Trivy scan, push to GHCR (deploy job comes with Helm)
-- [ ] Terraform: AWS VPC + EKS
-- [ ] Helm chart, Ingress, HPA
-- [ ] Prometheus + Grafana
-- [ ] Troubleshooting exercises
+- [x] GitHub Actions: test, build, Trivy scan, push to GHCR, gated Helm deploy
+- [x] Terraform: AWS VPC + EKS
+- [x] Helm chart, Ingress, HPA
+- [x] Prometheus + Grafana, alert rules, dashboard
+- [x] Troubleshooting exercises
+- [ ] Run end to end on AWS and collect screenshots
