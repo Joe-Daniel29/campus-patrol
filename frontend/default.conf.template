@@ -1,0 +1,19 @@
+server {
+    listen 8080;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # The browser only talks to this host; nginx forwards /api to the backend.
+    # BACKEND_URL is substituted at container start (Compose default: http://backend:8000,
+    # Helm sets it to the backend Service). Behind a Kubernetes Ingress, /api is
+    # routed straight to the backend and this block is a fallback.
+    location /api/ {
+        proxy_pass ${BACKEND_URL};
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        try_files $uri /index.html;
+    }
+}
