@@ -12,7 +12,7 @@ function Metric({ name, value }) {
 export default function TopBar({ stats, connected, updatedAt }) {
   return (
     <header className="topbar">
-      <h1>Campus Patrol</h1>
+      <h1>Campus Patrol v2</h1>
       <div className="metrics">
         <Metric name="rovers online" value={stats ? `${stats.rovers_online}/${stats.rovers_total}` : "-"} />
         <Metric name="open incidents" value={stats ? stats.incidents_open : "-"} />
