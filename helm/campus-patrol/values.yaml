@@ -1,0 +1,68 @@
+# Image repositories. Tags are set by CI to the Git commit SHA.
+imagePullSecrets: []
+
+backend:
+  image: ghcr.io/CHANGE_ME/campus-patrol-backend
+  tag: latest
+  replicaCount: 2
+  # Load simulated zones/rovers/events on first start (demo environments only).
+  seedDemoData: true
+  # When set, telemetry and event ingestion require this X-Rover-Token header.
+  ingestToken: ""
+  resources:
+    requests: { cpu: 100m, memory: 128Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+frontend:
+  image: ghcr.io/CHANGE_ME/campus-patrol-frontend
+  tag: latest
+  replicaCount: 2
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 200m, memory: 128Mi }
+
+# Virtual rovers. Also used as the load generator for the autoscaling demo.
+simulator:
+  enabled: false
+  image: ghcr.io/CHANGE_ME/campus-patrol-simulator
+  tag: latest
+  replicaCount: 1
+  rovers: 8
+  interval: 2.0
+  eventRate: 0.02
+  resources:
+    requests: { cpu: 50m, memory: 64Mi }
+    limits: { cpu: 300m, memory: 128Mi }
+
+postgres:
+  image: postgres:16-alpine
+  database: patrol
+  username: patrol
+  # Leave empty to generate a random password on first install (kept on upgrade).
+  password: ""
+  storage: 5Gi
+  storageClassName: ""
+  resources:
+    requests: { cpu: 100m, memory: 256Mi }
+    limits: { cpu: 500m, memory: 512Mi }
+
+ingress:
+  enabled: false
+  className: nginx
+  host: patrol.local
+
+hpa:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 60
+
+# These need the Prometheus Operator CRDs / Grafana sidecar from kube-prometheus-stack.
+monitoring:
+  serviceMonitor:
+    enabled: false
+    interval: 15s
+  alerts:
+    enabled: false
+  dashboard:
+    enabled: false
