@@ -1,0 +1,24 @@
+# Scenario 3: the container is Running but never Ready (0/1), so it receives no traffic.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patrol-broken-probe
+  namespace: campus-patrol
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: patrol-broken-probe }
+  template:
+    metadata:
+      labels: { app: patrol-broken-probe }
+    spec:
+      containers:
+        - name: web
+          image: nginxinc/nginx-unprivileged:1.27-alpine
+          ports:
+            - containerPort: 8080
+          readinessProbe:
+            httpGet:
+              path: /healthz-does-not-exist
+              port: 8080
+            periodSeconds: 5
