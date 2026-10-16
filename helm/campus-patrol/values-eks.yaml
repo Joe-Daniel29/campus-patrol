@@ -12,3 +12,8 @@ monitoring:
     enabled: true
   dashboard:
     enabled: true
+
+postgres:
+  # EKS ships a gp2 StorageClass but does not mark it as the cluster default,
+  # so the volume claim must name it explicitly.
+  storageClassName: gp2
