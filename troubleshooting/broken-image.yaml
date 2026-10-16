@@ -1,0 +1,17 @@
+# Scenario 1: the pod never starts. Expect ErrImagePull / ImagePullBackOff.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: patrol-broken-image
+  namespace: campus-patrol
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: patrol-broken-image }
+  template:
+    metadata:
+      labels: { app: patrol-broken-image }
+    spec:
+      containers:
+        - name: backend
+          image: ghcr.io/example/campus-patrol-backend:does-not-exist
