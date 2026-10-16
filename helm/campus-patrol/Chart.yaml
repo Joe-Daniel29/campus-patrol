@@ -1,0 +1,6 @@
+apiVersion: v2
+name: campus-patrol
+description: Campus patrol rover command center (React, FastAPI, PostgreSQL)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
