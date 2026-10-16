@@ -23,7 +23,7 @@ spec:
             severity: critical
           annotations:
             summary: "More than 5% of API requests are failing"
-        - alert: CriticalIncidentsOpen
+        - alert: IncidentBacklog
           expr: max(patrol_incidents_open) > 10
           for: 10m
           labels:
