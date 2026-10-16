@@ -112,6 +112,12 @@ kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090
 
 Beyond the default HTTP metrics: `patrol_rovers_total`, `patrol_rovers_online`, `patrol_incidents_open`, `patrol_rover_battery_percent{rover}`, `patrol_events_total{type,severity}`, `patrol_telemetry_total`.
 
+## Security scanning
+
+Every image is scanned by Trivy in CI before it can be pushed. The scan covers OS packages and language libraries and fails the job on any HIGH or CRITICAL vulnerability that has a fix available (`ignore-unfixed: true`), so nothing is published that could have been patched.
+
+The first scan of the frontend image found 41 such issues (39 HIGH, 2 CRITICAL), all in the Alpine packages of the old `nginx-unprivileged:1.27-alpine` base image. One example is CVE-2026-31789, a heap buffer overflow in OpenSSL's `libcrypto3` 3.3.3, fixed in 3.3.7. It is rated CRITICAL but only exploitable on 32-bit systems, so it would not have been reachable on these 64-bit nodes. The pipeline failed the build anyway, which is the intended behaviour. Moving the base image to `nginx-unprivileged:1.30-alpine` cleared all 41, and the backend and simulator images (`python:3.12-slim`) scanned clean.
+
 ## Troubleshooting lab
 
 Three deliberately broken manifests (bad image, Service selector mismatch, failing readiness probe) are in [`troubleshooting/`](troubleshooting/README.md).
