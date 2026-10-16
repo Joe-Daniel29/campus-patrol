@@ -2,6 +2,8 @@
 
 A command-center dashboard for a fleet of campus patrol robots. Rovers report their pose and battery, raise detection events (unrecognised person after hours, door left open, SOS), and security staff triage those events as incidents.
 
+**Presentation:** [docs/Campus-Patrol-Capstone.pptx](docs/Campus-Patrol-Capstone.pptx)
+
 > **Simulated data.** No physical robots are connected. A rover simulator posts telemetry and events to the same public API a real rover would use, and a seeder loads demo zones, rovers, events and incidents. Real hardware can be added later without backend changes.
 
 ## Architecture
