@@ -14,6 +14,7 @@ import asyncio
 import math
 import os
 import random
+import signal
 
 import httpx
 
@@ -138,14 +139,23 @@ async def run_rover(rover: Rover, client: httpx.AsyncClient) -> None:
 
 
 async def main() -> None:
+    # As PID 1 in a container, Python ignores SIGTERM unless a handler is installed,
+    # so Kubernetes would wait out the whole grace period. Cancel and exit instead.
+    loop = asyncio.get_running_loop()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, asyncio.current_task().cancel)
+
     headers = {"X-Rover-Token": TOKEN} if TOKEN else {}
     limits = httpx.Limits(max_connections=max(20, ROVERS))
-    async with httpx.AsyncClient(base_url=API_URL, headers=headers, timeout=10, limits=limits) as client:
-        zones = await fetch_zones(client)
-        rng = random.Random(SEED)
-        rovers = [Rover(i, zones, random.Random(rng.random())) for i in range(1, ROVERS + 1)]
-        print(f"Simulating {len(rovers)} rovers against {API_URL} every {INTERVAL}s")
-        await asyncio.gather(*(run_rover(r, client) for r in rovers))
+    try:
+        async with httpx.AsyncClient(base_url=API_URL, headers=headers, timeout=10, limits=limits) as client:
+            zones = await fetch_zones(client)
+            rng = random.Random(SEED)
+            rovers = [Rover(i, zones, random.Random(rng.random())) for i in range(1, ROVERS + 1)]
+            print(f"Simulating {len(rovers)} rovers against {API_URL} every {INTERVAL}s")
+            await asyncio.gather(*(run_rover(r, client) for r in rovers))
+    except asyncio.CancelledError:
+        print("Simulator stopped")
 
 
 if __name__ == "__main__":
