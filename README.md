@@ -4,6 +4,8 @@ A command-center dashboard for a fleet of campus patrol robots. Rovers report th
 
 **Presentation:** [docs/Campus-Patrol-Capstone.pptx](docs/Campus-Patrol-Capstone.pptx)
 
+**Video walkthrough:** [docs/explanation.mp4](docs/explanation.mp4)
+
 > **Simulated data.** No physical robots are connected. A rover simulator posts telemetry and events to the same public API a real rover would use, and a seeder loads demo zones, rovers, events and incidents. Real hardware can be added later without backend changes.
 
 ## Architecture
