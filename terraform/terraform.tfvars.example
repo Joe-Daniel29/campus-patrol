@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and adjust. Never put AWS credentials in this file;
+# the AWS provider reads them from your environment or ~/.aws/credentials.
+aws_region   = "ap-south-1"
+environment  = "dev"
+cluster_name = "campus-patrol-eks"
+
+node_instance_types = ["t3.medium"]
+node_min_size       = 2
+node_max_size       = 4
+node_desired_size   = 2
