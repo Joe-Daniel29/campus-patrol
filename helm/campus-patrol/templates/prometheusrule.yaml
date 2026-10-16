@@ -1,0 +1,33 @@
+{{- if .Values.monitoring.alerts.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "patrol.fullname" . }}
+  labels:
+    {{- include "patrol.labels" . | nindent 4 }}
+spec:
+  groups:
+    - name: campus-patrol
+      rules:
+        - alert: RoverOffline
+          expr: max(patrol_rovers_total) - max(patrol_rovers_online) > 0
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ "{{ $value }}" }} rover(s) have stopped reporting"
+        - alert: BackendHighErrorRate
+          expr: sum(rate(http_requests_total{status="5xx"}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "More than 5% of API requests are failing"
+        - alert: CriticalIncidentsOpen
+          expr: max(patrol_incidents_open) > 10
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "{{ "{{ $value }}" }} incidents are waiting for a response"
+{{- end }}
