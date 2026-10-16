@@ -1,0 +1,76 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "patrol.fullname" . }}-backend
+  labels:
+    {{- include "patrol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  selector:
+    {{- include "patrol.selector" (dict "ctx" . "component" "backend") | nindent 4 }}
+  ports:
+    - name: http
+      port: 8000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "patrol.fullname" . }}-backend
+  labels:
+    {{- include "patrol.labels" . | nindent 4 }}
+    app.kubernetes.io/component: backend
+spec:
+  {{- /* When the HPA is on it owns the replica count. */}}
+  {{- if not .Values.hpa.enabled }}
+  replicas: {{ .Values.backend.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "patrol.selector" (dict "ctx" . "component" "backend") | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "patrol.labels" . | nindent 8 }}
+        app.kubernetes.io/component: backend
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+      containers:
+        - name: backend
+          image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
+          ports:
+            - name: http
+              containerPort: 8000
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: { name: {{ include "patrol.postgresSecret" . }}, key: username }
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef: { name: {{ include "patrol.postgresSecret" . }}, key: password }
+            # $(VAR) is expanded by Kubernetes from the variables defined above.
+            - name: DATABASE_URL
+              value: "postgresql+psycopg://$(DB_USER):$(DB_PASSWORD)@{{ include "patrol.fullname" . }}-postgres:5432/{{ .Values.postgres.database }}"
+            - name: SEED_DEMO_DATA
+              value: {{ .Values.backend.seedDemoData | quote }}
+            {{- if .Values.backend.ingestToken }}
+            - name: INGEST_TOKEN
+              valueFrom:
+                secretKeyRef: { name: {{ include "patrol.appSecret" . }}, key: ingest-token }
+            {{- end }}
+          readinessProbe:
+            httpGet: { path: /ready, port: http }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: http }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}
