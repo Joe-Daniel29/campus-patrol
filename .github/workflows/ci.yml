@@ -87,3 +87,38 @@ jobs:
       - name: Push image
         if: github.event_name == 'push'
         run: docker push "$IMAGE"
+
+  # Runs only when the repository variable DEPLOY_ENABLED is "true", i.e. while an EKS
+  # cluster exists. Keeps the pipeline green (and AWS costs at zero) otherwise.
+  deploy:
+    needs: image
+    if: github.event_name == 'push' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'ap-south-1' }}
+      CLUSTER_NAME: ${{ vars.EKS_CLUSTER_NAME || 'campus-patrol-eks' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: azure/setup-helm@v4
+      - name: Configure kubectl
+        run: aws eks update-kubeconfig --region "$AWS_REGION" --name "$CLUSTER_NAME"
+      - name: Deploy with Helm
+        run: |
+          OWNER="${GITHUB_REPOSITORY_OWNER,,}"
+          helm upgrade --install campus-patrol ./helm/campus-patrol \
+            --namespace campus-patrol --create-namespace \
+            -f helm/campus-patrol/values-eks.yaml \
+            --set backend.image="ghcr.io/${OWNER}/campus-patrol-backend" \
+            --set backend.tag="${GITHUB_SHA}" \
+            --set frontend.image="ghcr.io/${OWNER}/campus-patrol-frontend" \
+            --set frontend.tag="${GITHUB_SHA}" \
+            --set simulator.image="ghcr.io/${OWNER}/campus-patrol-simulator" \
+            --set simulator.tag="${GITHUB_SHA}" \
+            --wait --timeout 5m
