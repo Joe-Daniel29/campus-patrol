@@ -76,7 +76,7 @@ The system stores event metadata only (type, zone, confidence, time), not images
 ## Roadmap
 
 - [x] Application, tests, Docker, Compose
-- [ ] GitHub Actions: test, build, Trivy scan, push to GHCR
+- [x] GitHub Actions: test, build, Trivy scan, push to GHCR (deploy job comes with Helm)
 - [ ] Terraform: AWS VPC + EKS
 - [ ] Helm chart, Ingress, HPA
 - [ ] Prometheus + Grafana
