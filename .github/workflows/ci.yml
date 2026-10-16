@@ -42,3 +42,48 @@ jobs:
       - name: Build
         run: npm run build
         working-directory: frontend
+
+  image:
+    name: image (${{ matrix.image }})
+    needs: [backend-tests, frontend-build]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [backend, frontend, simulator]
+    env:
+      REGISTRY: ghcr.io
+    steps:
+      - uses: actions/checkout@v4
+
+      # GHCR requires a lowercase repository path.
+      - name: Compute image name
+        run: echo "IMAGE=${REGISTRY}/${GITHUB_REPOSITORY_OWNER,,}/campus-patrol-${{ matrix.image }}:${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Build image
+        run: docker build -t "$IMAGE" ./${{ matrix.image }}
+
+      # Fails the job on fixable HIGH/CRITICAL vulnerabilities, before anything is pushed.
+      - name: Scan with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.IMAGE }}
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Tagged with the commit SHA so every running image traces back to a commit.
+      - name: Push image
+        if: github.event_name == 'push'
+        run: docker push "$IMAGE"
