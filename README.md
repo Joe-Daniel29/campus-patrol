@@ -128,4 +128,4 @@ The system stores event metadata only (type, zone, confidence, time), not images
 - [x] Helm chart, Ingress, HPA
 - [x] Prometheus + Grafana, alert rules, dashboard
 - [x] Troubleshooting exercises
-- [ ] Run end to end on AWS and collect screenshots
+- [x] Run end to end on AWS (EKS 1.31, 3 nodes): CI-built images deployed with Helm, HPA scaled 2 to 6 under load, Prometheus and Grafana verified
