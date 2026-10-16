@@ -21,3 +21,8 @@ dist/
 .idea/
 .vscode/
 evidence/
+
+# Local agent tooling
+.agents/
+.claude/
+skills-lock.json
