@@ -1,8 +1,12 @@
 import os
 
 # Must be set before the app is imported so the engine points at in-memory SQLite.
+# Every setting the tests depend on is pinned here so a developer's exported
+# environment (e.g. SEED_DEMO_DATA=true from a local run) cannot change the results.
 os.environ["DATABASE_URL"] = "sqlite+pysqlite://"
 os.environ["INGEST_TOKEN"] = ""
+os.environ["SEED_DEMO_DATA"] = "false"
+os.environ["ONLINE_WINDOW_SECONDS"] = "30"
 
 import pytest
 from fastapi.testclient import TestClient
