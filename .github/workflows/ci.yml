@@ -68,7 +68,7 @@ jobs:
 
       # Fails the job on fixable HIGH/CRITICAL vulnerabilities, before anything is pushed.
       - name: Scan with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@0.30.0
         with:
           image-ref: ${{ env.IMAGE }}
           severity: HIGH,CRITICAL
